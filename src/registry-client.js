@@ -16,10 +16,9 @@ const sendAxios = async (config) => {
 };
 
 class RegistryClient {
-  constructor(dataDir, repo, image, tag) {
+  constructor(dataDir, repo, image) {
     this.repo = repo;
     this.image = image;
-    this.tag = tag;
     this.dataDir = path.resolve(dataDir, repo, image);
   }
 
@@ -32,10 +31,10 @@ class RegistryClient {
     this.token = data.token;
   }
 
-  async getManifest() {
+  async getManifest(tag) {
     const data = await sendAxios({
       method: "GET",
-      url: `${registry}/${this.repo}/${this.image}/manifests/${this.tag}`,
+      url: `${registry}/${this.repo}/${this.image}/manifests/${tag}`,
       responseType: "json",
       headers: {
         Authorization: `Bearer ${this.token}`,

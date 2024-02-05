@@ -1,8 +1,17 @@
 const express = require("express");
 const RegistryClient = require("./registry-client");
+const NodeCache = require("node-cache");
 
 const dataDir = "./data";
 const app = express();
+const cache = new NodeCache({ stdTTL: 120, useClones: false });
+
+const getOrCreate = async (key, factory) => {
+  if (cache.has(key)) return cache.get(key);
+  const value = await Promise.resolve(factory());
+  cache.set(key, value);
+  return value;
+};
 
 app.use((req, res, next) => {
   console.log("\x1b[32m", "Incoming: " + req.path, "\x1b[0m");
@@ -13,14 +22,24 @@ app.get("/v2", (req, res) => {
   res.send();
 });
 
+const getRegistryClient = async (repo, image) => {
+  return await getOrCreate(`${repo}-${image}`, async () => {
+    const client = new RegistryClient(dataDir, repo, image);
+    await client.authenticate();
+    return client;
+  });
+};
+
 app.get("/v2/:repo/:image/manifests/:tag", async (req, res) => {
   var { repo, image, tag } = req.params;
   if (tag.startsWith("sha")) tag = "latest";
-  const client = new RegistryClient(dataDir, repo, image, tag);
-  await client.authenticate();
+  const client = await getRegistryClient(repo, image);
 
   try {
-    const manifest = await client.getManifest();
+    const manifest = await getOrCreate(`${repo}-${image}-${tag}`, async () => {
+      return await client.getManifest(tag);
+    });
+
     res
       .contentType("application/vnd.docker.distribution.manifest.v2+json")
       .send(JSON.stringify(manifest));
@@ -32,8 +51,7 @@ app.get("/v2/:repo/:image/manifests/:tag", async (req, res) => {
 
 app.get("/v2/:repo/:image/blobs/:digest", async (req, res) => {
   const { repo, image, digest } = req.params;
-  const client = new RegistryClient(dataDir, repo, image, null);
-  await client.authenticate();
+  const client = await getRegistryClient(repo, image);
 
   try {
     const file = await client.getBlob(digest);
@@ -46,6 +64,6 @@ app.get("/v2/:repo/:image/blobs/:digest", async (req, res) => {
   }
 });
 
-app.listen(5000, () => {
-  console.log("App listening at 5000");
+app.listen(4002, () => {
+  console.log("App listening at 4002");
 });
