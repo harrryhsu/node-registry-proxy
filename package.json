@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon src/registry-server --ignore ./data/"
+    "dev": "nodemon src/app --ignore ./data/",
+    "start": "node src/app"
   },
   "author": "",
   "license": "ISC",

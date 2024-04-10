@@ -15,7 +15,7 @@ const sendAxios = async (config) => {
   }
 };
 
-class RegistryClient {
+class DockerHubRegistryClient {
   constructor(dataDir, repo, image) {
     this.repo = repo;
     this.image = image;
@@ -64,15 +64,6 @@ class RegistryClient {
 
     return file;
   }
-
-  async pull() {
-    await this.authenticate();
-
-    const data = await this.getManifest();
-    for (var layer of data.layers) {
-      await this.getBlob(layer.digest);
-    }
-  }
 }
 
-module.exports = RegistryClient;
+module.exports = DockerHubRegistryClient;
