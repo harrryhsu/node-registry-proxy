@@ -9,13 +9,14 @@ class DockerHubRegistryClient {
   constructor(dataDir, repo, image) {
     this.repo = repo;
     this.image = image;
-    this.dataDir = path.resolve(dataDir, repo, image);
+    this.dataDir = path.resolve(dataDir, repo ?? "official", image);
+    this.imageTag = `${this.repo ? this.repo + "/" : ""}${this.image}`;
   }
 
   async authenticate() {
     const data = await sendAxios({
       method: "GET",
-      url: `${auth}/token?service=registry.docker.io&scope=repository:${this.repo}/${this.image}:pull`,
+      url: `${auth}/token?service=registry.docker.io&scope=repository:${this.imageTag}:pull`,
       responseType: "json",
     });
     this.token = data.token;
@@ -24,7 +25,7 @@ class DockerHubRegistryClient {
   async getManifest(tag) {
     const data = await sendAxios({
       method: "GET",
-      url: `${registry}/${this.repo}/${this.image}/manifests/${tag}`,
+      url: `${registry}/${this.imageTag}/manifests/${tag}`,
       responseType: "json",
       headers: {
         Authorization: `Bearer ${this.token}`,
@@ -40,7 +41,7 @@ class DockerHubRegistryClient {
     if (!fs.existsSync(file)) {
       const data = await sendAxios({
         method: "GET",
-        url: `${registry}/${this.repo}/${this.image}/blobs/${digest}`,
+        url: `${registry}/${this.imageTag}/blobs/${digest}`,
         responseType: "arraybuffer",
         headers: {
           Authorization: `Bearer ${this.token}`,
