@@ -37,10 +37,17 @@ const buildServer = (type) => {
     });
   };
 
+  const tagCache = {};
+
   const getManifest = async (req, res) => {
     var { repo, image, tag } = req.params;
-    if (tag.startsWith("sha")) tag = "latest";
     const client = await getRegistryClient(repo, image);
+    const key = repo + "_" + image;
+    if (tag.startsWith("sha")) {
+      tag = tagCache[key];
+    } else {
+      tagCache[key] = tag;
+    }
 
     try {
       const manifest = await getOrCreate(
